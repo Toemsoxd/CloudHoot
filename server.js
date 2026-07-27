@@ -45,7 +45,7 @@ async function initBrowser() {
         });
         
         console.log('Navegando a Kahoot...');
-        await page.goto('https://kahoot.it', { waitUntil: 'networkidle2' });
+        await page.goto('https://www.myinstants.com/es/categories/sound%20effects/us/', { waitUntil: 'networkidle2' });
         console.log('¡Kahoot cargado y listo en memoria!');
     } catch (e) {
         console.error('Error iniciando Chromium:', e);
