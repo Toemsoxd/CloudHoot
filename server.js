@@ -12,7 +12,7 @@ app.use(express.static('public'));
 let browser;
 let page;
 
-// 1. Cargar Chromium y Kahoot desde el inicio (segundo cero del contenedor)
+
 async function initBrowser() {
     try {
         console.log('Iniciando Chromium en segundo plano...');
@@ -23,13 +23,26 @@ async function initBrowser() {
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
-                '--disable-accelerated-2d-canvas',
+                '--disable-blink-features=AutomationControlled', // EVITA EL BLOQUEO DE CLOUDFLARE
                 '--no-first-run',
                 '--no-zygote',
                 '--single-process',
                 '--disable-gpu'
             ]
         });
+
+        page = await browser.newPage();
+        
+        // Engañar a Kahoot para que vea un Chrome de escritorio real
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+        
+        await page.setViewport({ width: 1024, height: 600 });
+        await page.goto('https://kahoot.it', { waitUntil: 'networkidle2' });
+        console.log('¡Kahoot cargado y listo en memoria!');
+    } catch (e) {
+        console.error('Error iniciando Chromium:', e);
+    }
+}
 
         page = await browser.newPage();
         await page.setViewport({ width: 1024, height: 600 });
