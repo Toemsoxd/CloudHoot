@@ -33,9 +33,16 @@ async function initBrowser() {
 
         page = await browser.newPage();
         
-        // Simular un navegador real para evitar el bloqueo anti-bot
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
-        await page.setViewport({ width: 1024, height: 600 });
+        // Configurar User-Agent ligero de Android Chrome 100
+        await page.setUserAgent('Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Mobile Safari/537.36');
+        
+        // Simular pantalla de dispositivo móvil táctil
+        await page.setViewport({ 
+            width: 1024, 
+            height: 600, 
+            isMobile: true, 
+            hasTouch: true 
+        });
         
         console.log('Navegando a Kahoot...');
         await page.goto('https://kahoot.it', { waitUntil: 'networkidle2' });
