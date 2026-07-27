@@ -26,15 +26,14 @@
         var socket = io();
         var canvas = document.getElementById('canvas');
         var ctx = canvas.getContext('2d');
-        var img = new Image();
 
         socket.on('frame', function(base64Image) {
+            var img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
             img.src = 'data:image/jpeg;base64,' + base64Image;
         });
-
-        img.onload = function() {
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        };
 
         function sendTap(clientX, clientY) {
             var rect = canvas.getBoundingClientRect();
