@@ -3,56 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CloudHoot - Tab 3</title>
+    <title>CloudHoot - Direct</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            overflow: hidden;
-            touch-action: none;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-        }
-        body, html {
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: sans-serif;
-        }
-        #canvas {
-            background: #111;
-            cursor: pointer;
-            width: 100vw;
-            height: 100vh;
-            object-fit: contain;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; overflow: hidden; touch-action: none; }
+        body, html { width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; }
+        #canvas { background: #111; cursor: pointer; width: 100vw; height: 100vh; object-fit: contain; }
         #keyboard-btn {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #00ffcc;
-            border: 1px solid #00ffcc;
-            padding: 10px 15px;
-            font-size: 16px;
-            border-radius: 8px;
-            z-index: 999;
+            position: fixed; bottom: 12px; right: 12px;
+            background: rgba(0, 0, 0, 0.8); color: #00ffcc;
+            border: 1px solid #00ffcc; padding: 10px 16px;
+            font-size: 15px; border-radius: 8px; z-index: 999;
         }
     </style>
 </head>
 <body>
 
-    <!-- El lienzo donde se dibuja el juego en tiempo real -->
     <canvas id="canvas" width="1024" height="600"></canvas>
+    <button id="keyboard-btn" onclick="openInput()">⌨️ Escribir (PIN/Apodo)</button>
 
-    <!-- Botón flotante para activar la entrada de texto en KitKat -->
-    <button id="keyboard-btn" onclick="openInput()">⌨️ Escribir PIN/Nombre</button>
-
-    <!-- Carga la librería cliente de Socket.io enviada desde el servidor Node.js -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var socket = io();
@@ -60,7 +28,6 @@
         var ctx = canvas.getContext('2d');
         var img = new Image();
 
-        // 1. Recibir imagen en Base64 desde Koyeb y renderizarla en el Canvas
         socket.on('frame', function(base64Image) {
             img.src = 'data:image/jpeg;base64,' + base64Image;
         });
@@ -69,22 +36,17 @@
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         };
 
-        // 2. Mapear el toque de la pantalla táctil y calcular las coordenadas reales (X,Y)
         function sendTap(clientX, clientY) {
             var rect = canvas.getBoundingClientRect();
-            
-            // Escalar según la resolución del lienzo (1024x600)
             var scaleX = canvas.width / rect.width;
             var scaleY = canvas.height / rect.height;
 
             var realX = Math.round((clientX - rect.left) * scaleX);
             var realY = Math.round((clientY - rect.top) * scaleY);
 
-            // Enviar coordenadas al Chrome headless
             socket.emit('tap', { x: realX, y: realY });
         }
 
-        // Evento táctil (Touch Events)
         canvas.addEventListener('touchstart', function(e) {
             e.preventDefault();
             if (e.touches.length > 0) {
@@ -92,14 +54,12 @@
             }
         }, false);
 
-        // Evento para pruebas en PC con ratón (Click)
         canvas.addEventListener('mousedown', function(e) {
             sendTap(e.clientX, e.clientY);
         }, false);
 
-        // 3. Ventana emergente para ingresar el PIN o Nombre sin trabar el WebView antiguo
         function openInput() {
-            var text = prompt("Escribe el PIN o Nombre:");
+            var text = prompt("Introduce texto (PIN o Nombre):");
             if (text && text.trim() !== "") {
                 socket.emit('type_text', text);
             }
