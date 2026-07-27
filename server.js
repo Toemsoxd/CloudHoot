@@ -12,7 +12,7 @@ app.use(express.static('public'));
 let browser;
 let page;
 
-
+// Todo lo que lleve 'await' DEBE estar dentro de esta función async
 async function initBrowser() {
     try {
         console.log('Iniciando Chromium en segundo plano...');
@@ -23,7 +23,7 @@ async function initBrowser() {
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
-                '--disable-blink-features=AutomationControlled', // EVITA EL BLOQUEO DE CLOUDFLARE
+                '--disable-blink-features=AutomationControlled',
                 '--no-first-run',
                 '--no-zygote',
                 '--single-process',
@@ -33,10 +33,11 @@ async function initBrowser() {
 
         page = await browser.newPage();
         
-        // Engañar a Kahoot para que vea un Chrome de escritorio real
+        // Simular un navegador real para evitar el bloqueo anti-bot
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+        await page.setViewport({ width: 1024, height: 600 });
         
-        await page.setViewport({ width: 1024, height: 600 });
+        console.log('Navegando a Kahoot...');
         await page.goto('https://kahoot.it', { waitUntil: 'networkidle2' });
         console.log('¡Kahoot cargado y listo en memoria!');
     } catch (e) {
@@ -44,18 +45,9 @@ async function initBrowser() {
     }
 }
 
-        page = await browser.newPage();
-        await page.setViewport({ width: 1024, height: 600 });
-        await page.goto('https://kahoot.it', { waitUntil: 'networkidle2' });
-        console.log('¡Kahoot cargado y listo en memoria!');
-    } catch (e) {
-        console.error('Error iniciando Chromium:', e);
-    }
-}
-
+// Iniciar la carga inmediatamente
 initBrowser();
 
-// 2. Al conectar la tablet, solo le enviamos el fotograma que YA está cargado
 io.on('connection', (socket) => {
     console.log('⚡ Tab 3 conectada');
 
