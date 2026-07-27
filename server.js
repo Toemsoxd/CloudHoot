@@ -12,9 +12,10 @@ app.use(express.static('public'));
 let browser;
 let page;
 
+// 1. Cargar Chromium y Kahoot desde el inicio (segundo cero del contenedor)
 async function initBrowser() {
     try {
-        console.log('Iniciando Chromium en la nube...');
+        console.log('Iniciando Chromium en segundo plano...');
         browser = await puppeteer.launch({
             headless: "new",
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
@@ -33,14 +34,15 @@ async function initBrowser() {
         page = await browser.newPage();
         await page.setViewport({ width: 1024, height: 600 });
         await page.goto('https://kahoot.it', { waitUntil: 'networkidle2' });
-        console.log('¡Kahoot cargado con éxito!');
+        console.log('¡Kahoot cargado y listo en memoria!');
     } catch (e) {
-        console.error('Error al iniciar Chromium:', e);
+        console.error('Error iniciando Chromium:', e);
     }
 }
 
 initBrowser();
 
+// 2. Al conectar la tablet, solo le enviamos el fotograma que YA está cargado
 io.on('connection', (socket) => {
     console.log('⚡ Tab 3 conectada');
 
@@ -60,12 +62,14 @@ io.on('connection', (socket) => {
 
     streamScreen();
 
+    // Reenviar clicks/toques directamente
     socket.on('tap', async (coords) => {
         if (page) {
             try { await page.mouse.click(coords.x, coords.y); } catch (e) {}
         }
     });
 
+    // Reenviar texto directo del teclado nativo
     socket.on('type_text', async (text) => {
         if (page) {
             try {
@@ -81,8 +85,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// ESCUCHAR EN 0.0.0.0 Y EN EL PUERTO DE RENDER
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 CloudHoot activo en el puerto ${PORT}`);
+    console.log(`🚀 Servidor activo en puerto ${PORT}`);
 });
