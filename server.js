@@ -9,14 +9,15 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
-io.on('connection', async (socket) => {
-    console.log('⚡ Tab 3 conectada');
+let browser;
+let page;
 
-    let browser;
+async function initBrowser() {
     try {
+        console.log('Iniciando Chromium en la nube...');
         browser = await puppeteer.launch({
             headless: "new",
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -29,55 +30,59 @@ io.on('connection', async (socket) => {
             ]
         });
 
-        const page = await browser.newPage();
-        // Resolución optimizada para la pantalla de la Tab 3 (1024x600)
+        page = await browser.newPage();
         await page.setViewport({ width: 1024, height: 600 });
         await page.goto('https://kahoot.it', { waitUntil: 'networkidle2' });
+        console.log('¡Kahoot cargado con éxito!');
+    } catch (e) {
+        console.error('Error al iniciar Chromium:', e);
+    }
+}
 
-        let isCapturing = true;
+initBrowser();
 
-        // Captura continua de pantalla
-        const streamScreen = async () => {
-            while (isCapturing) {
-                try {
-                    const screenshot = await page.screenshot({ type: 'jpeg', quality: 45 });
-                    socket.emit('frame', screenshot.toString('base64'));
-                } catch (err) {
-                    break;
-                }
-                await new Promise(r => setTimeout(r, 40)); // ~25 fps
-            }
-        };
+io.on('connection', (socket) => {
+    console.log('⚡ Tab 3 conectada');
 
-        streamScreen();
+    let isCapturing = true;
 
-        // Eventos táctiles
-        socket.on('tap', async (coords) => {
+    const streamScreen = async () => {
+        while (isCapturing && page) {
             try {
-                await page.mouse.click(coords.x, coords.y);
-            } catch (e) {}
-        });
+                const screenshot = await page.screenshot({ type: 'jpeg', quality: 40 });
+                socket.emit('frame', screenshot.toString('base64'));
+            } catch (err) {
+                break;
+            }
+            await new Promise(r => setTimeout(r, 60)); // ~15-20 fps
+        }
+    };
 
-        // Evento de texto teclado
-        socket.on('type_text', async (text) => {
+    streamScreen();
+
+    socket.on('tap', async (coords) => {
+        if (page) {
+            try { await page.mouse.click(coords.x, coords.y); } catch (e) {}
+        }
+    });
+
+    socket.on('type_text', async (text) => {
+        if (page) {
             try {
                 await page.keyboard.type(text);
                 await page.keyboard.press('Enter');
             } catch (e) {}
-        });
+        }
+    });
 
-        socket.on('disconnect', async () => {
-            isCapturing = false;
-            if (browser) await browser.close();
-            console.log('❌ Tab 3 desconectada');
-        });
-
-    } catch (error) {
-        console.error('Error iniciando Puppeteer:', error);
-    }
+    socket.on('disconnect', () => {
+        isCapturing = false;
+        console.log('❌ Tab 3 desconectada');
+    });
 });
 
+// ESCUCHAR EN 0.0.0.0 Y EN EL PUERTO DE RENDER
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => {
-    console.log(`🚀 CloudHoot activo en puerto ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 CloudHoot activo en el puerto ${PORT}`);
 });
